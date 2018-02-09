@@ -7,15 +7,15 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-type VideListItem struct {
+type VideoListItem struct {
 	Id string `json:"id"`
 	Name string `json:"name"`
 	Duration int `json:"duration"`
 	Thumbnail string `json:"thumbnail"`
 }
 
-type PlayVideoInfo struct {
-	Item VideListItem
+type VideoInfo struct {
+	Item VideoListItem
 	Url  string `json:"url"`
 }
 
