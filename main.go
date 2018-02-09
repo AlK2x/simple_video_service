@@ -2,7 +2,7 @@ package main
 
 import (
 	"net/http"
-	"github.com/AlK2x/simple-video-service/handlers"
+	"github.com/AlK2x/simple_video_service/handlers"
 	log "github.com/Sirupsen/logrus"
 	"os"
 	"os/signal"
