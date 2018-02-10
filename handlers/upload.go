@@ -60,7 +60,7 @@ func (u UploadHandler) upload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(u1.String(), "New video", 3, 42, fileUrl)
+	_, err = stmt.Exec(u1.String(), fileName, 3, 42, fileUrl)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		fmt.Fprint(w, err)
