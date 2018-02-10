@@ -8,6 +8,9 @@ import (
 	"os/signal"
 	"syscall"
 	"context"
+	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
+
 )
 
 func main() {
@@ -18,16 +21,23 @@ func main() {
 	}
 	defer file.Close()
 
+	db, err := sql.Open("mysql", `root:12345@/simple_video_service`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer db.Close()
+
 	killSignalChan := getKillSignalChan()
 	serverUrl := ":8000"
 	log.WithFields(log.Fields{"url": serverUrl}).Info("starting the serve")
-	srv := startServer(serverUrl)
+	srv := startServer(serverUrl, db)
 	waitForKillSignal(killSignalChan)
 	srv.Shutdown(context.Background())
 }
 
-func startServer(serverUrl string) *http.Server {
-	router := handlers.Router()
+func startServer(serverUrl string, db *sql.DB) *http.Server {
+	router := handlers.Router(db)
 	srv := &http.Server{Addr: serverUrl, Handler: router}
 	go func() {
 		log.Fatal(srv.ListenAndServe())

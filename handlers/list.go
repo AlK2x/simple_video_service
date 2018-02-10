@@ -4,29 +4,34 @@ import (
 	"net/http"
 	"encoding/json"
 	"io"
+	"database/sql"
 )
 
-func list(w http.ResponseWriter, _ *http.Request) {
-	response := []VideoListItem{{
-		Id: "d290f1ee-6c54-4b01-90e6-d701748f0851",
-		Name: "Black Retrospective Woman",
-		Duration: 15,
-		Thumbnail: "/content/d290f1ee-6c54-4b01-90e6-d701748f0851/screen.jpg",
-	},
-	{
-		Id: "hjkhhjk3-23j4-j45k-erkj-kj3k4jl2k345",
-		Name: "Go Really TEASER-HD",
-		Duration: 41,
-		Thumbnail: "/content/hjkhhjk3-23j4-j45k-erkj-kj3k4jl2k345/screen.jpg",
-	},
-	{
-		Id: "sldjfl34-dfgj-523k-jk34-5jk3j45klj34",
-		Name: "Танцор",
-		Duration: 92,
-		Thumbnail: "/content/sldjfl34-dfgj-523k-jk34-5jk3j45klj34/screen.jpg",
-	}}
+type ListHandler struct {
+	Db *sql.DB
+}
 
-	r, err := json.Marshal(response)
+func (l ListHandler) list(w http.ResponseWriter, _ *http.Request) {
+
+	rows, err := l.Db.Query(`SELECT video_key, title, duration, thumbnail_url FROM video`)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	videos := []VideoListItem{}
+	for rows.Next() {
+		var videoItem VideoListItem
+		err :=  rows.Scan(&videoItem.Id, &videoItem.Name, &videoItem.Duration, &videoItem.Thumbnail)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		videos = append(videos, videoItem)
+	}
+
+	r, err := json.Marshal(videos)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

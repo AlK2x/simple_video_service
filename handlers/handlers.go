@@ -8,8 +8,7 @@ import (
 	_ "mime/multipart"
 	_ "io"
 	_ "os"
-	"io"
-	"os"
+	"database/sql"
 )
 
 type VideoListItem struct {
@@ -19,18 +18,21 @@ type VideoListItem struct {
 	Thumbnail string `json:"thumbnail"`
 }
 
-type VideoInfo struct {
+type VideoItem struct {
 	Item VideoListItem
 	Url  string `json:"url"`
 }
 
-func Router() http.Handler {
+func Router(db *sql.DB) http.Handler {
+	l := ListHandler{Db: db}
+	v := VideoHandler{Db: db}
+	u := UploadHandler{Db: db}
 	r := mux.NewRouter()
 	s := r.PathPrefix("/api/v1").Subrouter()
 	s.HandleFunc("/hello-world", helloWorld).Methods(http.MethodGet)
-	s.HandleFunc("/list", list).Methods(http.MethodGet)
-	s.HandleFunc("/video/{ID}", video).Methods(http.MethodGet)
-	s.HandleFunc("/video", uploadVideo).Methods(http.MethodPost)
+	s.HandleFunc("/list", l.list).Methods(http.MethodGet)
+	s.HandleFunc("/video/{ID}", v.video).Methods(http.MethodGet)
+	s.HandleFunc("/video", u.upload).Methods(http.MethodPost)
 
 	return logMiddleware(r)
 }
@@ -45,37 +47,6 @@ func logMiddleware(h http.Handler) http.Handler {
 		}).Info("got a new request")
 		h.ServeHTTP(w, r)
 	})
-}
-
-func uploadVideo(w http.ResponseWriter, r *http.Request) {
-	inputFile, header, err := r.FormFile("file[]")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Fprint(w, err)
-		return
-	}
-
-	mimeType := header.Header.Get("Content-Type")
-	if mimeType != "video/mp4" {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	fileName := header.Filename
-
-	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Fprint(w, err)
-		return
-	}
-
-	bytes, err := io.Copy(file, inputFile)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Fprint(w, err)
-		return
-	}
-	fmt.Fprint(w, bytes)
 }
 
 func helloWorld(w http.ResponseWriter, _ *http.Request) {
