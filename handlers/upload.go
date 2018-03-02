@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"os"
 	"io"
-	"database/sql"
 	"github.com/satori/go.uuid"
+	"github.com/AlK2x/simple_video_service/packages/repository"
+	"github.com/AlK2x/simple_video_service/packages/model"
 )
 
 type UploadHandler struct {
-	Db *sql.DB
+	Db *repository.VideoRepository
 }
 
 func (u UploadHandler) upload(w http.ResponseWriter, r *http.Request) {
@@ -51,16 +52,16 @@ func (u UploadHandler) upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	q := `INSERT INTO video (video_key, title, status, duration, url) VALUES(?, ?, ?, ?, ?)`
-	stmt, err := u.Db.Prepare(q)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		fmt.Fprint(w, err)
-		return
+	video := &model.VideoItem{
+		Item: model.VideoListItem{
+			Id: u1.String(),
+			Name: fileName,
+			Duration: 42,
+			Thumbnail: "",
+		},
+		Url: fileUrl,
 	}
-	defer stmt.Close()
-
-	_, err = stmt.Exec(u1.String(), fileName, 3, 42, fileUrl)
+	err = u.Db.SaveVideo(video)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		fmt.Fprint(w, err)

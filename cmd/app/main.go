@@ -10,6 +10,7 @@ import (
 	"context"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/AlK2x/simple_video_service/packages/repository"
 
 )
 
@@ -31,12 +32,14 @@ func main() {
 	killSignalChan := getKillSignalChan()
 	serverUrl := ":8000"
 	log.WithFields(log.Fields{"url": serverUrl}).Info("starting the serve")
-	srv := startServer(serverUrl, db)
+
+	repository := repository.CreateVideoRepository(db)
+	srv := startServer(serverUrl, repository)
 	waitForKillSignal(killSignalChan)
 	srv.Shutdown(context.Background())
 }
 
-func startServer(serverUrl string, db *sql.DB) *http.Server {
+func startServer(serverUrl string, db *repository.VideoRepository) *http.Server {
 	router := handlers.Router(db)
 	srv := &http.Server{Addr: serverUrl, Handler: router}
 	go func() {

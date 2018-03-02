@@ -8,25 +8,14 @@ import (
 	_ "mime/multipart"
 	_ "io"
 	_ "os"
-	"database/sql"
+	"github.com/AlK2x/simple_video_service/packages/repository"
 )
 
-type VideoListItem struct {
-	Id string `json:"id"`
-	Name string `json:"name"`
-	Duration int `json:"duration"`
-	Thumbnail string `json:"thumbnail"`
-}
 
-type VideoItem struct {
-	Item VideoListItem
-	Url  string `json:"url"`
-}
-
-func Router(db *sql.DB) http.Handler {
-	l := ListHandler{Db: db}
-	v := VideoHandler{Db: db}
-	u := UploadHandler{Db: db}
+func Router(repo *repository.VideoRepository) http.Handler {
+	l := ListHandler{Db: repo}
+	v := VideoHandler{Db: repo}
+	u := UploadHandler{Db: repo}
 	r := mux.NewRouter()
 	s := r.PathPrefix("/api/v1").Subrouter()
 	s.HandleFunc("/hello-world", helloWorld).Methods(http.MethodGet)

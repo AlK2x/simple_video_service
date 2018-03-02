@@ -4,36 +4,23 @@ import (
 	"net/http"
 	"encoding/json"
 	"io"
-	"database/sql"
+	"github.com/AlK2x/simple_video_service/packages/repository"
 )
 
 type ListHandler struct {
-	Db *sql.DB
+	Db *repository.VideoRepository
 }
 
 func (l ListHandler) list(w http.ResponseWriter, _ *http.Request) {
-
-	rows, err := l.Db.Query(`SELECT video_key, title, duration, thumbnail_url FROM video`)
+	videos, err := l.Db.GetVideos()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
-
-	videos := []VideoListItem{}
-	for rows.Next() {
-		var videoItem VideoListItem
-		err :=  rows.Scan(&videoItem.Id, &videoItem.Name, &videoItem.Duration, &videoItem.Thumbnail)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		videos = append(videos, videoItem)
-	}
-
 	r, err := json.Marshal(videos)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	w.Header().Set("Content-Type", "application/json: charset=UTF-8")
 	io.WriteString(w, string(r))
