@@ -48,6 +48,13 @@ func GenerateTask() *Task {
 		return nil
 	}
 
+	if video == nil {
+		err = repo.ChangeVideoStatus(video.Item.Id, repository.InProgress)
+		if err != nil {
+			return nil
+		}
+	}
+
 	return &Task{rand.Intn(10), video}
 }
 
@@ -106,14 +113,14 @@ func Worker(tasksChan <-chan *Task, name int) {
 		log.Printf("start handle task %v on worker %v\n", task, name)
 		duration, err := ffmpeg.GetVideoDuration(task.Value.Url)
 		if err != nil {
-			log.Printf("start handle task %v on worker %v\n", task, name)
+			log.Printf("create duration err %v\n", err)
 			continue
 		}
 		videoKey := task.Value.Item.Id
 		thumbnailPath := "content/" + task.Value.Item.Id + "/"
 		err = ffmpeg.CreateVideoThumbnail(task.Value.Url, thumbnailPath, 0)
 		if err != nil {
-			log.Printf("start handle task %v on worker %v\n", task, name)
+			log.Printf("create thumb err %v\n", err)
 			continue
 		}
 

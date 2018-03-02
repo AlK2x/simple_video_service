@@ -56,7 +56,7 @@ func (u UploadHandler) upload(w http.ResponseWriter, r *http.Request) {
 		Item: model.VideoListItem{
 			Id: u1.String(),
 			Name: fileName,
-			Duration: 42,
+			Duration: 0,
 			Thumbnail: "",
 		},
 		Url: fileUrl,

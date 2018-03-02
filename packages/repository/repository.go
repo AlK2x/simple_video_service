@@ -3,7 +3,14 @@ package repository
 import (
 	"database/sql"
 	"github.com/AlK2x/simple_video_service/packages/model"
-	"net/http"
+)
+
+type Status int
+const (
+	Open       Status = 0
+	InProgress Status = 1
+	Error      Status = 2
+	Complete   Status = 3
 )
 
 type VideoRepository struct {
@@ -65,7 +72,7 @@ func (v VideoRepository) SaveVideo(video *model.VideoItem) error {
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(video.Item.Id, video.Item.Name, 1, video.Item.Duration, video.Url)
+	_, err = stmt.Exec(video.Item.Id, video.Item.Name, Open, video.Item.Duration, video.Url)
 	if err != nil {
 		return err
 	}
@@ -87,16 +94,31 @@ func (v VideoRepository) UpdateVideo(key string, duration float64, thumbnail str
 	return nil
 }
 
+func (v VideoRepository) ChangeVideoStatus(key string, status Status) error {
+	q := `UPDATE video SET status = ? WHERE video_key = ?`
+	stmt, err := v.db.Prepare(q)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(status)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (v VideoRepository) GetUnprocessedVideo() (*model.VideoItem, error) {
 	responseVideo := model.VideoItem{}
-	stmt, err := v.db.Prepare(`SELECT video_key, title, duration, thumbnail_url, url FROM video WHERE status = 1 LIMIT 1`)
+	stmt, err := v.db.Prepare(`SELECT video_key, title, duration, thumbnail_url, url FROM video WHERE status = ? LIMIT 1`)
 	if err != nil {
 		return nil, err
 	}
 
 	defer stmt.Close()
 
-	err = stmt.QueryRow().Scan(
+	err = stmt.QueryRow(Open).Scan(
 		&responseVideo.Item.Id,
 		&responseVideo.Item.Name,
 		&responseVideo.Item.Duration,
